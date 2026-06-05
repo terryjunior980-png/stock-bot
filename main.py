@@ -1,10 +1,18 @@
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from bot import run_bot
 from alerts import handle_commands
 import pytz
+import threading
+from flask import Flask
 
+app = Flask(__name__)
 WAT = pytz.timezone("Africa/Lagos")
+
+@app.route('/')
+def home():
+    return "Stock Bot Running ✅"
 
 def job():
     print(f"\n⏰ Scheduled job triggered at {datetime.now(WAT).strftime('%Y-%m-%d %H:%M')} WAT")
@@ -14,10 +22,9 @@ def command_listener():
     print(f"👂 Checking commands at {datetime.now(WAT).strftime('%H:%M')}")
     handle_commands()
 
-if __name__ == "__main__":
-    scheduler = BlockingScheduler(timezone=WAT)
+def start_scheduler():
+    scheduler = BackgroundScheduler(timezone=WAT)
 
-    # Run scan every weekday at 3:45 PM WAT
     scheduler.add_job(
         job,
         trigger='cron',
@@ -27,13 +34,13 @@ if __name__ == "__main__":
         timezone=WAT
     )
 
-    # Check for commands every 10 seconds
     scheduler.add_job(
         command_listener,
         trigger='interval',
         seconds=10
     )
 
+    scheduler.start()
     print("🤖 Stock Signal Bot Started")
     print("⏰ Scheduled to run Monday-Friday at 3:45 PM WAT")
     print("📱 Signals will be sent to your Telegram")
@@ -43,4 +50,9 @@ if __name__ == "__main__":
     print("\n🔄 Running initial test scan now...")
     run_bot()
 
-    scheduler.start()
+if __name__ == "__main__":
+    scheduler_thread = threading.Thread(target=start_scheduler)
+    scheduler_thread.daemon = True
+    scheduler_thread.start()
+
+    app.run(host='0.0.0.0', port=10000)
