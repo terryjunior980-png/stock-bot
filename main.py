@@ -1,4 +1,3 @@
-from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 from bot import run_bot
@@ -19,7 +18,6 @@ def job():
     run_bot()
 
 def command_listener():
-    print(f"👂 Checking commands at {datetime.now(WAT).strftime('%H:%M')}")
     handle_commands()
 
 def start_scheduler():
@@ -37,22 +35,21 @@ def start_scheduler():
     scheduler.add_job(
         command_listener,
         trigger='interval',
-        seconds=10
+        seconds=30,
+        max_instances=1,
+        coalesce=True
     )
 
     scheduler.start()
     print("🤖 Stock Signal Bot Started")
-    print("⏰ Scheduled to run Monday-Friday at 3:45 PM WAT")
-    print("📱 Signals will be sent to your Telegram")
-    print("👂 Listening for commands every 10 seconds")
+    print("⏰ Scheduled Monday-Friday at 3:45 PM WAT")
+    print("📱 Signals sent to Telegram")
+    print("👂 Listening for commands every 30 seconds")
     print("="*50)
-
-    print("\n🔄 Running initial test scan now...")
     run_bot()
 
 if __name__ == "__main__":
-    scheduler_thread = threading.Thread(target=start_scheduler)
-    scheduler_thread.daemon = True
-    scheduler_thread.start()
-
+    t = threading.Thread(target=start_scheduler)
+    t.daemon = True
+    t.start()
     app.run(host='0.0.0.0', port=10000)
